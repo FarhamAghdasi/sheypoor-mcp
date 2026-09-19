@@ -14,7 +14,4 @@ export default defineConfig({
   sourcemap: true,
   splitting: false,
   shims: false,
-  banner: { js: "#!/usr/bin/env node" },
-  // Only add the shebang to the bin entry — tsup applies banner globally,
-  // so we strip it from the library entry in a post-build step (not shown here).
 });

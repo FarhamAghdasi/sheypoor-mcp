@@ -28,7 +28,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --apply .",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm build && pnpm test"
+    "prepublishOnly": "node_modules/.bin/tsup && node_modules/.bin/vitest run"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
