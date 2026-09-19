@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.vitest-cache/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+*.tsbuildinfo
+.npmrc
+.tmp/
+tmp/
