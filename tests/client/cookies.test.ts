@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { CookieJar } from "../../src/client/cookies.js";
+
+function tmpFile(name: string): string {
+  return join(tmpdir(), `sheypoor-test-${name}.json`);
+}
 
 describe("CookieJar", () => {
   let jar: CookieJar;
@@ -74,7 +80,7 @@ describe("CookieJar", () => {
   });
 
   it("save/load round-trips via file", () => {
-    const tmp = "/tmp/sheypoor-test-cookies.json";
+    const tmp = tmpFile("cookies");
     const explicit = new CookieJar(tmp);
     explicit.set("x", "y");
     explicit.save();
@@ -83,7 +89,7 @@ describe("CookieJar", () => {
   });
 
   it("destroy removes file and clears memory", () => {
-    const tmp = "/tmp/sheypoor-test-cookies-destroy.json";
+    const tmp = tmpFile("cookies-destroy");
     const j = new CookieJar(tmp);
     j.set("a", "1");
     j.save();
