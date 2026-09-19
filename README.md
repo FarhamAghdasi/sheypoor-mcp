@@ -26,6 +26,12 @@ Sheypoor marketplace as tools an LLM can call. Ask Claude:
 
 ---
 
+## Preview
+
+![Kilocode MCP Screenshot](document/kilocode.png)
+
+---
+
 ## Install
 
 ### Claude Desktop
