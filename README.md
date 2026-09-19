@@ -4,7 +4,6 @@
 
 **Model Context Protocol server for [Sheypoor](https://www.sheypoor.com) — Iran's largest classifieds marketplace.**
 
-[![npm](https://img.shields.io/npm/v/sheypoor-mcp.svg?style=flat-square)](https://www.npmjs.com/package/sheypoor-mcp)
 [![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
 [![node](https://img.shields.io/badge/node-%3E%3D20.11-brightgreen.svg?style=flat-square)](https://nodejs.org/)
 [![MCP](https://img.shields.io/badge/MCP-compatible-blue.svg?style=flat-square)](https://modelcontextprotocol.io/)
@@ -69,10 +68,13 @@ Add to `~/.cursor/mcp.json`:
 
 ### Cline / other hosts
 
-Any MCP host that supports stdio transport works:
+Any MCP host that supports stdio transport works. Clone the repo and point it at the built binary:
 
 ```bash
-npx -y sheypoor-mcp
+git clone https://github.com/farhamaghdasi/sheypoor-mcp.git
+cd sheypoor-mcp
+pnpm install && pnpm build
+node dist/bin.js
 ```
 
 ### From source
