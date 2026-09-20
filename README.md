@@ -31,53 +31,34 @@ Sheypoor marketplace as tools an LLM can call. Ask Claude:
 
 ---
 
-## Install
+## Quick start (recommended)
 
-### Claude Desktop
+Use the hosted Cloudflare Worker — no install needed:
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
-or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+**Remote URL:** `https://sheypoor-mcp.farhamaghdasi.workers.dev/`
 
-```json
-{
-  "mcpServers": {
-    "sheypoor": {
-      "command": "npx",
-      "args": ["-y", "sheypoor-mcp"]
-    }
-  }
-}
-```
+### MCP host config
 
-Restart Claude Desktop. The tools appear under the 🔌 icon.
-
-### Cursor
-
-Add to `~/.cursor/mcp.json`:
+Any MCP host that supports remote HTTP/SSE transport. Point it at:
 
 ```json
 {
   "mcpServers": {
     "sheypoor": {
-      "command": "npx",
-      "args": ["-y", "sheypoor-mcp"]
+      "type": "remote",
+      "url": "https://sheypoor-mcp.farhamaghdasi.workers.dev/"
     }
   }
 }
 ```
 
-### Cline / other hosts
+Restart your MCP host after saving. The tools should appear automatically.
 
-Any MCP host that supports stdio transport works. Clone the repo and point it at the built binary:
+---
 
-```bash
-git clone https://github.com/farhamaghdasi/sheypoor-mcp.git
-cd sheypoor-mcp
-pnpm install && pnpm build
-node dist/bin.js
-```
+## Local install
 
-### From source
+If you prefer running it locally, or want to develop:
 
 ```bash
 git clone https://github.com/farhamaghdasi/sheypoor-mcp.git
@@ -85,6 +66,35 @@ cd sheypoor-mcp
 pnpm install
 pnpm build
 node dist/bin.js
+```
+
+Then point your MCP host at `node dist/bin.js` as a local stdio command.
+
+---
+
+## From source (development)
+
+```bash
+git clone https://github.com/farhamaghdasi/sheypoor-mcp.git
+cd sheypoor-mcp
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm lint
+pnpm build
+```
+
+Layout:
+
+```
+src/
+├── bin.ts              CLI entry
+├── index.ts            public exports
+├── client/             HTTP client (reusable without MCP)
+├── mcp/                MCP server (tools, resources, prompts)
+└── util/               logger, throttle, paths
+tools/legacy-py/        frozen Python reference
+docs/                   architecture + API notes
 ```
 
 ---
@@ -186,28 +196,18 @@ console.log("Logged in:", tokens.userName);
 
 ---
 
-## Development
+## Cloudflare Worker
+
+The Worker is deployed at `https://sheypoor-mcp.farhamaghdasi.workers.dev/`.
+
+To deploy your own:
 
 ```bash
-pnpm install
-pnpm typecheck
-pnpm test
-pnpm lint
-pnpm build
+wrangler deploy
 ```
 
-Layout:
-
-```
-src/
-├── bin.ts              CLI entry
-├── index.ts            public exports
-├── client/             HTTP client (reusable without MCP)
-├── mcp/                MCP server (tools, resources, prompts)
-└── util/               logger, throttle, paths
-tools/legacy-py/        frozen Python reference
-docs/                   architecture + API notes
-```
+See `wrangler.toml` for configuration. The Worker uses `WebStandardStreamableHTTPServerTransport`
+and in-memory cookies by default. For persistent cookies, configure a KV binding in `wrangler.toml`.
 
 ---
 

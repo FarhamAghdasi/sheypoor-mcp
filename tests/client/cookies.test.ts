@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CookieJar } from "../../src/client/cookies.js";
+import { MemoryCookieStorage } from "../../src/client/cookie-storage.js";
+import { FileCookieStorage } from "../../src/client/cookie-storage.js";
 
 function tmpFile(name: string): string {
   return join(tmpdir(), `sheypoor-test-${name}.json`);
@@ -11,7 +13,7 @@ describe("CookieJar", () => {
   let jar: CookieJar;
 
   beforeEach(() => {
-    jar = new CookieJar();
+    jar = new CookieJar(new MemoryCookieStorage());
   });
 
   it("sets and gets a cookie", () => {
@@ -81,20 +83,20 @@ describe("CookieJar", () => {
 
   it("save/load round-trips via file", () => {
     const tmp = tmpFile("cookies");
-    const explicit = new CookieJar(tmp);
+    const explicit = new CookieJar(new FileCookieStorage(tmp));
     explicit.set("x", "y");
     explicit.save();
-    const loaded = new CookieJar(tmp);
+    const loaded = new CookieJar(new FileCookieStorage(tmp));
     expect(loaded.get("x")).toBe("y");
   });
 
   it("destroy removes file and clears memory", () => {
     const tmp = tmpFile("cookies-destroy");
-    const j = new CookieJar(tmp);
+    const j = new CookieJar(new FileCookieStorage(tmp));
     j.set("a", "1");
     j.save();
     j.destroy();
     expect(j.get("a")).toBeUndefined();
-    expect(j.path).toBe(tmp);
+    expect((j as any).path).toBe(tmp);
   });
 });

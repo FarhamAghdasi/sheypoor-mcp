@@ -2,6 +2,7 @@ import { log } from "../util/logger.js";
 import { TokenBucket, sleep } from "../util/throttle.js";
 import { DEFAULT_HEADERS, JSONAPI_HEADERS } from "./constants.js";
 import { CookieJar } from "./cookies.js";
+import { FileCookieStorage, MemoryCookieStorage } from "./cookie-storage.js";
 import {
   SheypoorAuthError,
   SheypoorError,
@@ -11,6 +12,7 @@ import {
 
 export interface HttpClientOptions {
   cookieFile?: string;
+  cookieStorage?: CookieJar;
   timeoutMs?: number;
   minDelayMs?: number;
   maxDelayMs?: number;
@@ -44,7 +46,13 @@ export class HttpClient {
   private userAgent: string;
 
   constructor(opts: HttpClientOptions = {}) {
-    this.cookies = new CookieJar(opts.cookieFile);
+    if (opts.cookieStorage) {
+      this.cookies = opts.cookieStorage;
+    } else if (opts.cookieFile) {
+      this.cookies = new CookieJar(new FileCookieStorage(opts.cookieFile));
+    } else {
+      this.cookies = new CookieJar(new MemoryCookieStorage());
+    }
     this.timeoutMs = opts.timeoutMs ?? 20_000;
     this.minDelayMs = opts.minDelayMs ?? 500;
     this.maxDelayMs = opts.maxDelayMs ?? 1_500;
@@ -108,7 +116,22 @@ export class HttpClient {
 
       this.absorbCookies(response);
 
-      if (response.status === 401) throw new SheypoorAuthError(`401 Unauthorized: ${finalUrl}`);
+      if (response.status === 401) {
+        const respText = await response.text().catch(() => "failed to read body");
+        log.error(
+          {
+            url: finalUrl,
+            status: response.status,
+            headers: Object.fromEntries(response.headers.entries()),
+            cookies: this.cookies.toObject(),
+            cookieHeader: this.cookies.toHeader(),
+            body: respText,
+            opts,
+          },
+          "401 Unauthorized"
+        );
+        throw new SheypoorAuthError(`401 Unauthorized: ${finalUrl}`);
+      }
       if (response.status === 404) throw new SheypoorNotFound(`404 Not Found: ${finalUrl}`);
       if (response.status === 429) {
         const retryAfter = Number.parseInt(response.headers.get("retry-after") ?? "0", 10);
@@ -144,7 +167,6 @@ export class HttpClient {
   }
 
   private absorbCookies(response: Response): void {
-    // Node's fetch exposes Set-Cookie via getSetCookie() (Node 20+).
     const anyHeaders = response.headers as unknown as { getSetCookie?: () => string[] };
     const setCookies =
       typeof anyHeaders.getSetCookie === "function"

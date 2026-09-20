@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { SheypoorClient } from "../../client/index.js";
+import { SheypoorRateLimitError } from "../../client/errors.js";
 
 interface PendingStore {
   [sessionId: string]: { verifyToken: string; phone: string; expiresAt: number };
@@ -17,30 +18,51 @@ export function registerAuthTools(server: McpServer, cli: SheypoorClient) {
       phone: z.string().regex(/^09\d{9}$/, "Iranian mobile number, e.g. 09000000000"),
     },
     async (args) => {
-      const started = await cli.auth.start(args.phone);
-      const sessionId = crypto.randomUUID();
-      pending[sessionId] = {
-        verifyToken: started.verifyToken,
-        phone: started.phone,
-        expiresAt: started.expiresAt,
-      };
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                sessionId,
-                phone: args.phone,
-                expiresInSeconds: Math.round((started.expiresAt - Date.now()) / 1000),
-                next: "Ask the user for the SMS code, then call login_complete.",
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-      };
+      try {
+        const started = await cli.auth.start(args.phone);
+        const sessionId = crypto.randomUUID();
+        pending[sessionId] = {
+          verifyToken: started.verifyToken,
+          phone: started.phone,
+          expiresAt: started.expiresAt,
+        };
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  sessionId,
+                  phone: args.phone,
+                  expiresInSeconds: Math.round((started.expiresAt - Date.now()) / 1000),
+                  next: "Ask the user for the SMS code, then call login_complete.",
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      } catch (err: any) {
+        const isRateLimit = err instanceof SheypoorRateLimitError;
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  error: isRateLimit ? "rate_limited" : "login_start_failed",
+                  message: err.message ?? String(err),
+                  retryAfter: isRateLimit ? err.retryAfter : undefined,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+          isError: true,
+        };
+      }
     },
   );
 

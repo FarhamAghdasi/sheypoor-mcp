@@ -87,30 +87,26 @@ export class AuthManager {
   }
 
   async complete(pending: PendingLogin, code: string): Promise<AuthTokens> {
-    this.http.cookies.set("verify_token", `Bearer ${pending.verifyToken}`);
-    try {
-      const res = await this.http.request<AuthVerifyResponse>(`${API_BASE}/auth/verify`, {
-        method: "POST",
-        body: { verification_code: code },
-      });
-      if (!res.success || !res.data) {
-        throw new SheypoorAuthError(res.message ?? "auth/verify failed");
-      }
-      const d = res.data;
-      this.tokens = {
-        userId: d.userId,
-        userName: d.userName,
-        userPhone: d.userPhone,
-        accessToken: d.access.token,
-        refreshToken: d.refresh.token,
-        accessTtl: d.access.ttl,
-        refreshTtl: d.refresh.ttl,
-      };
-      this.persistToCookies();
-      return this.tokens;
-    } finally {
-      this.http.cookies.delete("verify_token");
+    const res = await this.http.request<AuthVerifyResponse>(`${API_BASE}/auth/verify`, {
+      method: "POST",
+      body: { verification_code: code },
+      headers: { Authorization: `Bearer ${pending.verifyToken}` },
+    });
+    if (!res.success || !res.data) {
+      throw new SheypoorAuthError(res.message ?? "auth/verify failed");
     }
+    const d = res.data;
+    this.tokens = {
+      userId: d.userId,
+      userName: d.userName,
+      userPhone: d.userPhone,
+      accessToken: d.access.token,
+      refreshToken: d.refresh.token,
+      accessTtl: d.access.ttl,
+      refreshTtl: d.refresh.ttl,
+    };
+    this.persistToCookies();
+    return this.tokens;
   }
 
   async refresh(): Promise<AuthTokens> {

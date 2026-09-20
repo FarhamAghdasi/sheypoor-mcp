@@ -49,15 +49,17 @@ export async function runStdio(opts: CreateServerOptions = {}): Promise<void> {
   const { server, shutdown, client } = await createServer(opts);
   const transport = new StdioServerTransport();
 
-  // Save cookies on exit so login survives restarts
   const onSignal = async (signal: string) => {
     log.info({ signal }, "shutting down");
     client.saveCookies();
     await shutdown();
-    process.exit(0);
+    if (typeof process !== "undefined") process.exit(0);
   };
-  process.on("SIGINT", () => void onSignal("SIGINT"));
-  process.on("SIGTERM", () => void onSignal("SIGTERM"));
+
+  if (typeof process !== "undefined") {
+    process.on("SIGINT", () => void onSignal("SIGINT"));
+    process.on("SIGTERM", () => void onSignal("SIGTERM"));
+  }
 
   await server.connect(transport);
   log.info("stdio transport connected");

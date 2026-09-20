@@ -1,0 +1,9 @@
+name = "sheypoor-mcp"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Uncomment and configure if you want persistent cookies via KV:
+# [[kv_namespaces]]
+# binding = "SHEYPOOR_KV"
+# id = "your-kv-namespace-id"
